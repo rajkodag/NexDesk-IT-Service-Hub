@@ -6,59 +6,56 @@ import java.sql.SQLException;
 
 public final class DatabaseManager {
 
-    // Database configuration is read from environment variables.
-    // These variables will be configured in Render.
-    private static final String URL = System.getenv("DB_URL");
-    private static final String USER = System.getenv("DB_USER");
-    private static final String PASSWORD = System.getenv("DB_PASSWORD");
-
-    // Prevent object creation
     private DatabaseManager() {
+        // Prevent object creation
+    }
+
+    /**
+     * Gets a required environment variable.
+     */
+    private static String getEnvironmentVariable(String name)
+            throws SQLException {
+
+        String value = System.getenv(name);
+
+        if (value == null || value.trim().isEmpty()) {
+            throw new SQLException(
+                    name + " environment variable is not configured."
+            );
+        }
+
+        return value.trim();
     }
 
     /**
      * Creates a connection to the Oracle database.
+     *
+     * Render environment variables:
+     *
+     * DB_URL
+     * DB_USER
+     * DB_PASSWORD
      */
     public static Connection getConnection() throws SQLException {
 
-        // Check DB_URL
-        if (URL == null || URL.isBlank()) {
-            throw new SQLException(
-                    "DB_URL environment variable is not configured."
-            );
-        }
-
-        // Check DB_USER
-        if (USER == null || USER.isBlank()) {
-            throw new SQLException(
-                    "DB_USER environment variable is not configured."
-            );
-        }
-
-        // Check DB_PASSWORD
-        if (PASSWORD == null || PASSWORD.isBlank()) {
-            throw new SQLException(
-                    "DB_PASSWORD environment variable is not configured."
-            );
-        }
+        String url = getEnvironmentVariable("DB_URL");
+        String user = getEnvironmentVariable("DB_USER");
+        String password = getEnvironmentVariable("DB_PASSWORD");
 
         try {
-
-            Connection connection = DriverManager.getConnection(
-                    URL,
-                    USER,
-                    PASSWORD
+            return DriverManager.getConnection(
+                    url,
+                    user,
+                    password
             );
-
-            return connection;
 
         } catch (SQLException e) {
 
             System.err.println("========================================");
-            System.err.println("DATABASE CONNECTION FAILED");
+            System.err.println("ORACLE DATABASE CONNECTION FAILED");
             System.err.println("========================================");
-            System.err.println("URL  : " + URL);
-            System.err.println("USER : " + USER);
+            System.err.println("URL  : " + url);
+            System.err.println("USER : " + user);
             System.err.println("ERROR: " + e.getMessage());
             System.err.println("========================================");
 
@@ -67,35 +64,46 @@ public final class DatabaseManager {
     }
 
     /**
+     * Tests the Oracle database connection.
+     */
+    public static void testConnection() throws SQLException {
+
+        try (Connection connection = getConnection()) {
+
+            System.out.println("========================================");
+            System.out.println("ORACLE DATABASE CONNECTION SUCCESSFUL");
+            System.out.println("========================================");
+            System.out.println("Database URL  : " + getEnvironmentVariable("DB_URL"));
+            System.out.println("Database User : " + getEnvironmentVariable("DB_USER"));
+            System.out.println("========================================");
+        }
+    }
+
+    /**
      * Returns the configured database URL.
      */
     public static String getUrl() {
-        return URL;
+
+        String url = System.getenv("DB_URL");
+
+        if (url == null) {
+            return "";
+        }
+
+        return url;
     }
 
     /**
      * Returns the configured database username.
      */
     public static String getUser() {
-        return USER;
-    }
 
-    /**
-     * Tests the database connection.
-     */
-    public static void testConnection() throws SQLException {
+        String user = System.getenv("DB_USER");
 
-        try (Connection connection = getConnection()) {
-
-            if (connection != null && !connection.isClosed()) {
-
-                System.out.println("========================================");
-                System.out.println("Oracle connection successful.");
-                System.out.println("========================================");
-                System.out.println("URL  : " + URL);
-                System.out.println("USER : " + USER);
-                System.out.println("========================================");
-            }
+        if (user == null) {
+            return "";
         }
+
+        return user;
     }
 }
