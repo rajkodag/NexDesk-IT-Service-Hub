@@ -1,0 +1,40 @@
+{
+  "packageId": "com.nexdesk.itservicehub",
+  "host": "localhost:8080",
+  "name": "NexDesk 2.0 IT Service Hub",
+  "launcherName": "NexDesk",
+  "themeColor": "#090D16",
+  "navigationColor": "#0F172A",
+  "backgroundColor": "#090D16",
+  "enableNotifications": true,
+  "startUrl": "/index.html",
+  "iconUrl": "/icons/icon-512.png",
+  "maskableIconUrl": "/icons/icon-maskable-512.png",
+  "appVersionCode": 1,
+  "appVersionName": "2.0.0",
+  "shortcuts": [
+    {
+      "name": "Report IT Issue",
+      "shortName": "New Ticket",
+      "url": "/index.html?view=create",
+      "icon": "/icons/icon-192.png"
+    },
+    {
+      "name": "My Tickets Queue",
+      "shortName": "My Tickets",
+      "url": "/index.html?view=tickets",
+      "icon": "/icons/icon-192.png"
+    }
+  ],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "http://localhost:8080/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {
+    "playBilling": {
+      "enabled": false
+    }
+  },
+  "alphaDependencies": {
+    "enabled": false
+  }
+}

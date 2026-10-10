@@ -1,0 +1,47 @@
+services:
+  nexdesk-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nexdesk-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_URL=jdbc:oracle:thin:@oracle-db:1521/FREEPDB1
+      - DB_USER=ITHELPDESK
+      - DB_PASSWORD=ithelpdesk123
+      - JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      - JWT_EXPIRATION=86400000
+    depends_on:
+      oracle-db:
+        condition: service_healthy
+    networks:
+      - nexdesk-network
+    restart: unless-stopped
+
+  oracle-db:
+    image: container-registry.oracle.com/database/free:latest
+    container_name: nexdesk-oracle-db
+    ports:
+      - "1521:1521"
+    environment:
+      - ORACLE_PWD=ithelpdesk123
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+      - ./database/nexdesk.sql:/container-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "$ORACLE_HOME/bin/sqlplus -L SYSTEM/ithelpdesk123@FREEPDB1 <<<'exit;'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - nexdesk-network
+    restart: unless-stopped
+
+networks:
+  nexdesk-network:
+    driver: bridge
+
+volumes:
+  oracle-data:

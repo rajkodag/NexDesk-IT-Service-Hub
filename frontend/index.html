@@ -1,1 +1,768 @@
-<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NexDesk IT Service Hub</title><link rel="stylesheet" href="/css/style.css"></head><body><main class="container"><div class="brand">NEXDESK</div><h1>IT Service Hub</h1><p class="muted">IT support management in one place.</p><div id="message"></div><section id="auth"><div class="tabs"><button id="loginTab" class="active">Login</button><button id="signupTab">Create Account</button></div><form id="loginForm" class="card"><h2>Login</h2><input id="loginEmail" type="email" placeholder="Email" required><input id="loginPassword" type="password" placeholder="Password" required><button>Login</button><p class="hint">Demo: demo@nexdesk.com / demo123</p></form><form id="signupForm" class="card hidden"><h2>Create Account</h2><input id="signupName" placeholder="Full name" required><input id="signupEmail" type="email" placeholder="Email" required><input id="signupPassword" type="password" minlength="4" placeholder="Password" required><button>Create Account</button></form></section><section id="app" class="hidden"><div class="topbar"><strong id="welcome"></strong><button id="logout" class="secondary">Logout</button></div><div id="userPanel"><div class="card"><h2>Create Ticket</h2><form id="ticketForm"><input id="title" placeholder="Ticket title" required><textarea id="description" placeholder="Describe your problem" required></textarea><select id="category"><option>Hardware</option><option>Software</option><option>Network</option><option>Access</option><option>General</option></select><select id="priority"><option>LOW</option><option selected>MEDIUM</option><option>HIGH</option><option>CRITICAL</option></select><button>Create Ticket</button></form></div><div class="card"><h2>My Tickets</h2><div id="myTickets"></div></div></div><div id="adminPanel" class="hidden"><div class="card"><h2>All Tickets</h2><div id="adminTickets"></div></div><div class="card"><h2>Technicians</h2><div id="technicians"></div></div></div></section></main><script src="/js/auth.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+  <meta name="theme-color" content="#090d16">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="application-name" content="NexDesk">
+  <meta name="description" content="NexDesk 2.0 — Enterprise Autonomous IT Service Management & Self-Healing Hub">
+  <title>NexDesk 2.0 — Next-Gen Autonomous IT Service Hub</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon.png">
+  <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+  <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <!-- Top Navigation Bar -->
+    <header class="navbar">
+      <div class="brand-section">
+        <div class="brand-logo">N</div>
+        <div class="brand-text">
+          <h1>NexDesk <span class="brand-badge">2.0 AI-OPS</span></h1>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <!-- Live System Status Ticker -->
+        <div id="statusTicker" class="status-pill" title="Click to view infrastructure telemetry">
+          <span id="statusDot" class="status-indicator operational pulse"></span>
+          <span id="statusText">Infra: Operational</span>
+        </div>
+
+        <!-- Theme Toggle -->
+        <button id="themeToggle" class="btn btn-secondary btn-sm" title="Toggle Light/Dark Theme">
+          🌓 Theme
+        </button>
+
+        <!-- Android & Laptop Publish / Download Center -->
+        <button id="btnMobileAppInfo" class="btn btn-primary btn-sm" title="Launch or Publish for Android & Laptop" style="display:inline-flex; align-items:center; gap:6px;">
+          🚀 Launch & Publish
+        </button>
+
+        <!-- Logged-in User Info -->
+        <div id="userHeaderControls" class="hidden" style="display:flex; align-items:center; gap:10px;">
+          <span id="navUserName" style="font-size:13px; font-weight:600;"></span>
+          <span id="navUserRole" class="badge badge-medium">USER</span>
+          <button id="logoutBtn" class="btn btn-secondary btn-sm">Sign Out</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Outage / Incident Broadcast Banner -->
+    <div id="outageBanner" class="outage-banner hidden">
+      <div class="outage-banner-content">
+        <span class="outage-tag">ACTIVE INCIDENT</span>
+        <div>
+          <strong id="outageTitle">M365 Exchange Mailbox Sync Latency</strong>
+          <span id="outageDesc" class="text-muted" style="margin-left: 8px;"></span>
+        </div>
+      </div>
+      <button id="dismissOutage" class="btn btn-secondary btn-sm" style="padding: 4px 8px;">Dismiss</button>
+    </div>
+
+    <!-- Android / Mobile PWA Install Banner -->
+    <div id="pwaInstallBanner" class="pwa-install-banner hidden">
+      <div class="pwa-install-content">
+        <div class="pwa-install-icon">📲</div>
+        <div>
+          <strong style="font-size:14px; display:block;">Install NexDesk App</strong>
+          <span class="text-muted" style="font-size:12px;">Add to Home Screen for fast native Android & Laptop performance</span>
+        </div>
+      </div>
+      <div class="pwa-install-actions">
+        <button id="pwaInstallBtn" class="btn btn-primary btn-sm">Install</button>
+        <button id="pwaDismissBtn" class="btn btn-secondary btn-sm">Dismiss</button>
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- AUTH SECTION (GUEST / LOGIN / SIGNUP) -->
+    <!-- ============================================== -->
+    <section id="authSection" class="glass-card" style="max-width: 520px; margin: 40px auto;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h2 style="font-size: 24px; font-weight: 800; margin-bottom: 6px;">Sign in to NexDesk</h2>
+        <p class="text-muted" style="font-size: 14px;">Next-Gen Autonomous IT Service Management & Self-Healing Hub</p>
+      </div>
+
+      <div class="view-tabs" style="justify-content: center; margin-bottom: 20px;">
+        <button id="tabLogin" class="view-tab active">Sign In</button>
+        <button id="tabSignup" class="view-tab">Create Account</button>
+      </div>
+
+      <!-- Quick 1-Click Admin Access -->
+      <div style="background: rgba(255,255,255,0.03); border: 1px dashed var(--border-color); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 20px; text-align: center;">
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">⚡ Quick IT Administrator Access:</p>
+        <button id="quickDemoAdmin" type="button" class="btn btn-primary btn-sm" style="margin: 0 auto; display: inline-flex; align-items: center; gap: 6px;">
+          🛡️ Quick Admin Sign-In (admin@nexdesk.com)
+        </button>
+      </div>
+
+      <!-- Login Form -->
+      <form id="formLogin">
+        <div class="form-group">
+          <label class="form-label">Corporate Email</label>
+          <input id="loginEmail" type="email" class="form-input" placeholder="e.g. admin@nexdesk.com" required>
+        </div>
+        <div class="form-group">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
+            <label class="form-label" style="margin:0;">Password</label>
+            <a href="javascript:void(0)" id="linkForgotPassword" style="font-size:12px; color:var(--accent-cyan); text-decoration:none; cursor:pointer;">Forgot Password?</a>
+          </div>
+          <input id="loginPass" type="password" class="form-input" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">Sign In to NexDesk</button>
+      </form>
+
+      <!-- Signup Form -->
+      <form id="formSignup" class="hidden">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input id="signupName" class="form-input" placeholder="e.g. Sarah Connor" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Corporate Email</label>
+          <input id="signupEmail" type="email" class="form-input" placeholder="sarah@company.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password (Min 8 Characters, Mix of Letters, Numbers & Symbols)</label>
+          <input id="signupPass" type="password" minlength="8" class="form-input" placeholder="e.g. Employee@2026!" required autocomplete="new-password">
+          <div class="password-meter-container">
+            <div class="password-meter">
+              <div id="signupPassStrengthBar" class="password-meter-fill"></div>
+            </div>
+            <div id="signupPassStrengthText" class="password-strength-label">Password Strength: None</div>
+            <div class="password-rules-grid">
+              <span id="ruleSignupLen" class="rule-pill">✖ 8+ characters</span>
+              <span id="ruleSignupLetters" class="rule-pill">✖ Upper & Lowercase</span>
+              <span id="ruleSignupNum" class="rule-pill">✖ Number (0-9)</span>
+              <span id="ruleSignupSym" class="rule-pill">✖ Special Symbol</span>
+            </div>
+          </div>
+        </div>
+        <button type="submit" id="btnSignupSubmit" class="btn btn-primary" style="width: 100%; margin-top: 12px;">Create Account</button>
+      </form>
+
+      <!-- Forgot / Reset Password Form -->
+      <form id="formForgot" class="hidden">
+        <div style="text-align: center; margin-bottom: 16px;">
+          <h3 style="font-size: 16px; font-weight: 700; color: var(--accent-cyan);">🔐 Reset Account Password</h3>
+          <p class="text-muted" style="font-size: 12px; margin-top: 4px;">Enter your registered corporate email and choose a new secure password.</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Corporate Email</label>
+          <input id="forgotEmail" type="email" class="form-input" placeholder="e.g. yourname@company.com" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">New Password (Min 8 Characters, Mix of Letters, Numbers & Symbols)</label>
+          <input id="forgotNewPass" type="password" minlength="8" class="form-input" placeholder="e.g. NewSecret@2026!" required autocomplete="new-password">
+          <div class="password-meter-container">
+            <div class="password-meter">
+              <div id="forgotPassStrengthBar" class="password-meter-fill"></div>
+            </div>
+            <div id="forgotPassStrengthText" class="password-strength-label">Password Strength: None</div>
+            <div class="password-rules-grid">
+              <span id="ruleForgotLen" class="rule-pill">✖ 8+ characters</span>
+              <span id="ruleForgotLetters" class="rule-pill">✖ Upper & Lowercase</span>
+              <span id="ruleForgotNum" class="rule-pill">✖ Number (0-9)</span>
+              <span id="ruleForgotSym" class="rule-pill">✖ Special Symbol</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Confirm New Password</label>
+          <input id="forgotConfirmPass" type="password" minlength="8" class="form-input" placeholder="Re-enter your new password" required autocomplete="new-password">
+        </div>
+
+        <button type="submit" id="btnForgotSubmit" class="btn btn-primary" style="width: 100%; margin-top: 12px;">Update & Reset Password</button>
+
+        <div style="text-align: center; margin-top: 14px;">
+          <a href="javascript:void(0)" id="linkBackToLogin" style="font-size: 13px; color: var(--text-muted); text-decoration: none; cursor:pointer;">← Back to Sign In</a>
+        </div>
+      </form>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- MAIN APPLICATION WORKSPACE -->
+    <!-- ============================================== -->
+    <main id="appSection" class="hidden">
+      <!-- Navigation Tabs -->
+      <nav id="viewTabs" class="view-tabs"></nav>
+
+      <!-- ============================================== -->
+      <!-- VIEW: USER CREATE TICKET (AI SELF-HEALING) -->
+      <!-- ============================================== -->
+      <div id="viewUserCreate" class="view-content hidden">
+        <div class="glass-card" style="max-width: 900px; margin: 0 auto;">
+          <div class="card-title">
+            <span>✨ Report an IT Issue & Self-Fix Co-Pilot</span>
+            <span class="badge badge-low">⚡ AI-TRIAGE ACTIVE</span>
+          </div>
+          <p class="text-muted" style="font-size: 13px; margin-bottom: 20px;">
+            Describe what's wrong. NexDesk's AI diagnostic engine will analyze symptoms in real-time, provide instant self-healing runbooks, and calculate blast-radius impact.
+          </p>
+
+          <form id="newTicketForm">
+            <div class="form-group">
+              <label class="form-label">What is the problem? (Ticket Title)</label>
+              <input id="ticketTitle" class="form-input" placeholder="e.g. WiFi keeps disconnecting every 10 minutes in room 4B" required autocomplete="off">
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Category</label>
+                <select id="ticketCategory" class="form-select">
+                  <option value="Network">🌐 Network & Wi-Fi</option>
+                  <option value="Hardware">💻 Hardware & Peripherals</option>
+                  <option value="Software">📦 Software, Apps & OS</option>
+                  <option value="Access">🔐 Access, MFA & Passwords</option>
+                  <option value="General" selected>⚙️ General IT Inquiry</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Calculated Priority</label>
+                <select id="ticketPriority" class="form-select">
+                  <option value="LOW">LOW (48h Resolution SLA)</option>
+                  <option value="MEDIUM" selected>MEDIUM (24h Resolution SLA)</option>
+                  <option value="HIGH">HIGH (8h Resolution SLA)</option>
+                  <option value="CRITICAL">CRITICAL (4h Resolution SLA)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Detailed Symptoms & What Happened</label>
+              <textarea id="ticketDesc" class="form-textarea" placeholder="Provide details (error codes, what you were doing). Notice our AI Co-Pilot analyzing your input below in real-time..." required></textarea>
+            </div>
+
+            <!-- Dynamic AI Co-Pilot Runbook Card -->
+            <div id="aiCopilotBox" class="ai-copilot-card hidden">
+              <div class="ai-copilot-header">
+                <div class="ai-copilot-title">
+                  <span>🤖 NexDesk AI Co-Pilot Diagnostic</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span id="aiConfidence" class="ai-confidence-pill">94% Confidence</span>
+                  <span id="aiFixTime" class="badge badge-low">~90s Fix</span>
+                </div>
+              </div>
+
+              <p id="aiRootCause" style="font-size: 13px; font-weight:600; margin-bottom: 10px; color: var(--accent-cyan);"></p>
+
+              <div id="aiDuplicateNotice" class="hidden" style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-sm); padding: 8px 12px; font-size: 12px; color: var(--accent-amber); margin-bottom: 10px;"></div>
+
+              <div id="aiRunbookSteps"></div>
+
+              <div id="aiCmdContainer" class="hidden">
+                <div class="ai-cmd-box">
+                  <span id="aiCmdText"></span>
+                  <button type="button" id="copyCmdBtn" class="ai-cmd-copy">📋 Copy Command</button>
+                </div>
+              </div>
+
+              <!-- Deflection: Solved My Problem Button -->
+              <div class="deflect-action">
+                <span style="font-size: 13px; color: var(--accent-emerald); font-weight:600;">
+                  💡 Did these instructions resolve your issue?
+                </span>
+                <button type="button" id="btnDeflectResolved" class="btn btn-success btn-sm">
+                  🎉 Yes, Problem Solved! (Zero-Ticket)
+                </button>
+              </div>
+            </div>
+
+            <!-- Blast Radius & Impact Calculator -->
+            <div class="matrix-container">
+              <div class="matrix-title">
+                <span>🎯 Blast Radius & Business Impact Matrix</span>
+                <span id="impactScoreBadge" class="matrix-score-badge badge-medium">Impact Score: 50/100</span>
+              </div>
+
+              <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">Who is impacted?</p>
+              <div class="matrix-options" id="scopeButtons">
+                <button type="button" class="matrix-btn selected" data-scope="1">Just Me</button>
+                <button type="button" class="matrix-btn" data-scope="2">My Squad / Team</button>
+                <button type="button" class="matrix-btn" data-scope="3">Entire Department</button>
+                <button type="button" class="matrix-btn" data-scope="4">Whole Organization</button>
+              </div>
+
+              <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">How severely is your work blocked?</p>
+              <div class="matrix-options" id="blockerButtons">
+                <button type="button" class="matrix-btn selected" data-blocker="1">Minor Inconvenience</button>
+                <button type="button" class="matrix-btn" data-blocker="2">Workaround Available</button>
+                <button type="button" class="matrix-btn" data-blocker="3">Completely Blocked</button>
+                <button type="button" class="matrix-btn" data-blocker="4">Security / Data Risk</button>
+              </div>
+            </div>
+
+            <!-- Digital Device Passport Telemetry Snapshot -->
+            <div class="telemetry-card">
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-size: 13px; font-weight:600; color:var(--text-muted);">
+                  ⚡ Digital Device Passport (Auto-Snapshot)
+                </span>
+                <label style="font-size: 12px; display:flex; align-items:center; gap:6px; cursor:pointer;">
+                  <input type="checkbox" id="attachTelemetryCheck" checked>
+                  Attach telemetry to ticket
+                </label>
+              </div>
+              <div id="telemetryChips" class="telemetry-chips"></div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 15px;">
+              🚀 Submit Ticket to IT Ops
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- VIEW: USER MY TICKETS -->
+      <!-- ============================================== -->
+      <div id="viewUserTickets" class="view-content hidden">
+        <div class="glass-card">
+          <div class="card-title">
+            <span>📋 My Active & Historical Tickets</span>
+            <button id="btnNewTicketShortcut" class="btn btn-primary btn-sm">+ Report New Issue</button>
+          </div>
+          <div id="userTicketsList" style="display:flex; flex-direction:column; gap:12px; margin-top:16px;"></div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- VIEW: ADMIN KANBAN BOARD -->
+      <!-- ============================================== -->
+      <div id="viewAdminKanban" class="view-content hidden">
+        <div class="kanban-header-actions" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+          <h2 style="font-size:18px; font-weight:700;">IT Ops Dispatch Cockpit (Kanban)</h2>
+          <div class="kanban-search-group" style="display:flex; gap:10px;">
+            <input id="adminSearchInput" class="form-input" placeholder="🔍 Quick search tickets..." style="width:260px; padding:6px 12px; font-size:13px;">
+            <button id="btnRefreshAdmin" class="btn btn-secondary btn-sm">🔄 Refresh</button>
+          </div>
+        </div>
+
+        <!-- Mobile Column Selector Pills (Optimized for Android / Mobile screens) -->
+        <div id="kanbanMobileFilters" class="kanban-mobile-filters">
+          <button type="button" class="mobile-filter-pill active" data-filter="ALL">All (Swipe)</button>
+          <button type="button" class="mobile-filter-pill" data-filter="OPEN">📥 Open</button>
+          <button type="button" class="mobile-filter-pill" data-filter="IN_PROGRESS">⚙️ In Progress</button>
+          <button type="button" class="mobile-filter-pill" data-filter="RESOLVED">✅ Resolved</button>
+          <button type="button" class="mobile-filter-pill" data-filter="CLOSED">📁 Closed</button>
+        </div>
+
+        <div class="kanban-board">
+          <div class="kanban-col" data-status="OPEN">
+            <div class="kanban-col-header">
+              <span class="kanban-col-title">📥 Triage / Open</span>
+              <span id="countOpen" class="kanban-col-count">0</span>
+            </div>
+            <div id="colOpen" class="kanban-cards"></div>
+          </div>
+
+          <div class="kanban-col" data-status="IN_PROGRESS">
+            <div class="kanban-col-header">
+              <span class="kanban-col-title">⚙️ Investigating</span>
+              <span id="countProgress" class="kanban-col-count">0</span>
+            </div>
+            <div id="colProgress" class="kanban-cards"></div>
+          </div>
+
+          <div class="kanban-col" data-status="RESOLVED">
+            <div class="kanban-col-header">
+              <span class="kanban-col-title">✅ Resolved</span>
+              <span id="countResolved" class="kanban-col-count">0</span>
+            </div>
+            <div id="colResolved" class="kanban-cards"></div>
+          </div>
+
+          <div class="kanban-col" data-status="CLOSED">
+            <div class="kanban-col-header">
+              <span class="kanban-col-title">📁 Closed / Archived</span>
+              <span id="countClosed" class="kanban-col-count">0</span>
+            </div>
+            <div id="colClosed" class="kanban-cards"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- VIEW: ADMIN TICKETS TABLE -->
+      <!-- ============================================== -->
+      <div id="viewAdminTable" class="view-content hidden">
+        <div class="glass-card">
+          <div class="card-title">
+            <span>📋 All IT Tickets Queue</span>
+          </div>
+          <div style="overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; font-size:13px; text-align:left;">
+              <thead>
+                <tr style="border-bottom:1px solid var(--border-color); color:var(--text-muted);">
+                  <th style="padding:10px;">ID</th>
+                  <th style="padding:10px;">Title</th>
+                  <th style="padding:10px;">Requester</th>
+                  <th style="padding:10px;">Category</th>
+                  <th style="padding:10px;">Priority</th>
+                  <th style="padding:10px;">Status</th>
+                  <th style="padding:10px;">SLA Deadline</th>
+                  <th style="padding:10px;">Assigned</th>
+                  <th style="padding:10px;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="adminTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- VIEW: IT OPS ANALYTICS & VELOCITY COCKPIT -->
+      <!-- ============================================== -->
+      <div id="viewAdminAnalytics" class="view-content hidden">
+        <div class="analytics-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">Total Volume</div>
+            <div id="kpiTotal" class="kpi-value">0</div>
+            <div class="kpi-sub">Across all categories</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Mean Time to Resolution (MTTR)</div>
+            <div id="kpiMttr" class="kpi-value" style="color:var(--accent-cyan);">1.8h</div>
+            <div class="kpi-sub">Target: &lt; 4.0h (Exceeding KPI)</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">SLA Compliance Rate</div>
+            <div id="kpiSla" class="kpi-value" style="color:var(--accent-emerald);">94.6%</div>
+            <div class="kpi-sub">Resolved within deadline</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Deflected via AI Self-Fix</div>
+            <div id="kpiDeflected" class="kpi-value" style="color:var(--accent-purple);">148</div>
+            <div class="kpi-sub">Saved ~74 hours of IT labor</div>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+          <div class="glass-card">
+            <div class="card-title">
+              <span>📊 Category Distribution</span>
+            </div>
+            <div id="categoryBars" style="display:flex; flex-direction:column; gap:10px; margin-top:14px;"></div>
+          </div>
+
+          <div class="glass-card">
+            <div class="card-title">
+              <span>👨‍🔧 Technician Velocity & Leaderboard</span>
+            </div>
+            <div id="techLeaderboard" style="display:flex; flex-direction:column; gap:10px; margin-top:14px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- VIEW: TECHNICIANS FLEET -->
+      <!-- ============================================== -->
+      <div id="viewAdminTechs" class="view-content hidden">
+        <div class="glass-card">
+          <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>🛡️ Specialized IT Technician Fleet</span>
+            <button id="btnOpenAddTechModal" type="button" class="btn btn-primary btn-sm">
+              ➕ Add New Technician
+            </button>
+          </div>
+          <div id="technicianCardsGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px; margin-top:16px;"></div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ============================================== -->
+    <!-- MODAL: ADD NEW TECHNICIAN (ADMIN MANUAL PROVISIONING) -->
+    <!-- ============================================== -->
+    <div id="addTechModal" class="modal-overlay">
+      <div class="modal-dialog" style="max-width: 520px;">
+        <div class="bottom-sheet-handle"></div>
+        <div class="modal-header">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size: 18px;">👨‍🔧</span>
+            <strong style="font-size: 16px;">Manually Add IT Technician</strong>
+          </div>
+          <button id="addTechModalClose" class="modal-close">&times;</button>
+        </div>
+
+        <form id="formAddTech" class="modal-body">
+          <p class="text-muted" style="font-size: 13px; margin-bottom: 16px;">
+            Provision a technician in the Oracle database with domain specialization and secure login credentials.
+          </p>
+
+          <div class="form-group">
+            <label class="form-label">Full Name</label>
+            <input id="techFullName" class="form-input" placeholder="e.g. Marcus Vance" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Technician Corporate Email</label>
+            <input id="techEmail" type="email" class="form-input" placeholder="e.g. marcus@nexdesk.com" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Specialization Domain</label>
+              <select id="techSpecialization" class="form-select">
+                <option value="Hardware & Infrastructure" selected>💻 Hardware & Infrastructure</option>
+                <option value="Network & Cloud Security">🌐 Network & Cloud Security</option>
+                <option value="Identity & Access (IAM)">🔐 Identity & Access (IAM)</option>
+                <option value="Enterprise OS & Software">📦 Enterprise OS & Software</option>
+                <option value="Database & High Availability">💾 Database & High Availability</option>
+                <option value="DevOps & Reliability">🚀 DevOps & Reliability</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Initial Availability</label>
+              <select id="techStatus" class="form-select">
+                <option value="AVAILABLE" selected>🟢 AVAILABLE</option>
+                <option value="BUSY">🟡 BUSY</option>
+                <option value="OFFLINE">⚪ OFFLINE</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Technician Password (Minimum 8 Characters)</label>
+            <input id="techPassword" type="password" minlength="8" class="form-input" placeholder="e.g. Tech@2026!" required autocomplete="new-password">
+            <div class="password-meter-container">
+              <div class="password-meter">
+                <div id="techPassStrengthBar" class="password-meter-fill"></div>
+              </div>
+              <div id="techPassStrengthText" class="password-strength-label">Password Strength: None</div>
+              <div class="password-rules-grid">
+                <span id="ruleTechLen" class="rule-pill">✖ 8+ characters</span>
+                <span id="ruleTechLetters" class="rule-pill">✖ Upper & Lowercase</span>
+                <span id="ruleTechNum" class="rule-pill">✖ Number (0-9)</span>
+                <span id="ruleTechSym" class="rule-pill">✖ Special Symbol</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+            <button type="button" id="btnCancelAddTech" class="btn btn-secondary">Cancel</button>
+            <button type="submit" id="btnSubmitAddTech" class="btn btn-primary">➕ Provision Technician</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- MODAL: TICKET DETAIL & COLLABORATION THREAD -->
+    <!-- ============================================== -->
+    <div id="ticketModal" class="modal-overlay">
+      <div class="modal-dialog">
+        <div class="bottom-sheet-handle"></div>
+        <div class="modal-header">
+          <div>
+            <span id="modalTicketId" class="ticket-id" style="font-size:14px;">#0</span>
+            <span id="modalStatusBadge" class="badge" style="margin-left:8px;">OPEN</span>
+            <span id="modalPriorityBadge" class="badge" style="margin-left:4px;">MEDIUM</span>
+          </div>
+          <button id="modalCloseBtn" class="modal-close">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <h2 id="modalTicketTitle" style="font-size:18px; margin-bottom:10px;"></h2>
+          <p id="modalTicketDesc" style="color:var(--text-muted); font-size:14px; line-height:1.6; margin-bottom:16px;"></p>
+
+          <!-- Telemetry Snapshot Drawer -->
+          <div id="modalTelemetryBox" class="telemetry-card hidden">
+            <span style="font-size:12px; font-weight:700; color:var(--accent-cyan);">⚡ Attached Device Telemetry Snapshot:</span>
+            <div id="modalTelemetryChips" class="telemetry-chips"></div>
+          </div>
+
+          <!-- Technician AI Fix Assistant Generator -->
+          <div id="techAiBox" class="ai-copilot-card hidden" style="margin-top:16px;">
+            <div class="ai-copilot-header">
+              <span class="ai-copilot-title">✨ AI Technician Troubleshooting Playbook</span>
+              <button id="btnInsertDraft" class="btn btn-secondary btn-sm">Insert Draft in Reply</button>
+            </div>
+            <div id="techAiChecklist" style="font-size:13px; margin:8px 0;"></div>
+            <div class="ai-cmd-box">
+              <span id="techAiScript"></span>
+              <button id="copyTechScriptBtn" class="ai-cmd-copy">Copy Script</button>
+            </div>
+          </div>
+
+          <!-- Controls for Admins/Techs -->
+          <div id="adminControlsArea" class="form-row hidden" style="margin:20px 0; background:rgba(0,0,0,0.2); padding:14px; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+            <div class="form-group" style="margin:0;">
+              <label class="form-label">Workflow Status</label>
+              <select id="modalStatusSelect" class="form-select">
+                <option value="OPEN">OPEN</option>
+                <option value="IN_PROGRESS">IN_PROGRESS</option>
+                <option value="RESOLVED">RESOLVED</option>
+                <option value="CLOSED">CLOSED</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label class="form-label">Assign Technician</label>
+              <select id="modalTechSelect" class="form-select"></select>
+            </div>
+          </div>
+
+          <!-- Two-Way Collaboration & Activity Thread -->
+          <div style="margin-top:24px;">
+            <h3 style="font-size:15px; font-weight:700; display:flex; align-items:center; justify-content:space-between;">
+              <span>💬 Activity & Collaboration Thread</span>
+              <button id="btnGenerateAiFix" class="btn btn-secondary btn-sm">✨ Generate AI Fix</button>
+            </h3>
+
+            <div id="modalCommentsList" class="comment-list"></div>
+
+            <form id="commentForm" style="margin-top:12px;">
+              <textarea id="commentInput" class="form-textarea" placeholder="Write a response or note..." style="min-height:80px;" required></textarea>
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
+                <label id="internalNoteLabel" class="hidden" style="font-size:12px; display:flex; align-items:center; gap:6px; cursor:pointer; color:var(--accent-amber);">
+                  <input type="checkbox" id="commentIsInternal">
+                  🔒 Internal Tech-Only Note
+                </label>
+                <button type="submit" class="btn btn-primary btn-sm">Post Message</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- MODAL: CROSS-PLATFORM LAUNCH & PUBLISH HUB    -->
+    <!-- ============================================== -->
+    <div id="mobileAppModal" class="modal-overlay">
+      <div class="modal-dialog" style="max-width: 580px;">
+        <div class="bottom-sheet-handle"></div>
+        <div class="modal-header">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size: 20px;">🚀</span>
+            <div>
+              <strong style="font-size: 16px; display:block;">Launch & Publish Center</strong>
+              <span class="text-muted" style="font-size: 11px;">Production distribution for Android Mobiles & Laptops</span>
+            </div>
+          </div>
+          <button id="mobileAppModalClose" class="modal-close">&times;</button>
+        </div>
+
+        <div class="modal-body" style="padding: 20px;">
+          <!-- Dual Platform Tabs -->
+          <div class="view-tabs" style="justify-content: center; margin-bottom: 18px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+            <button id="tabPublishMobile" type="button" class="view-tab active" style="font-size: 13px;">📱 Android Mobile</button>
+            <button id="tabPublishLaptop" type="button" class="view-tab" style="font-size: 13px;">💻 Laptop & Desktop</button>
+          </div>
+
+          <!-- TAB 1: ANDROID MOBILE -->
+          <div id="panelPublishMobile">
+            <div style="text-align: center; margin-bottom: 16px;">
+              <div style="background: #ffffff; padding: 12px; border-radius: var(--radius-md); display: inline-block; box-shadow: 0 4px 20px rgba(0,0,0,0.3); margin-bottom: 12px;">
+                <img id="mobileQrCodeImg" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=http://192.168.0.118:8080/" alt="Scan to Launch NexDesk on Android" style="display:block; width:160px; height:160px;">
+              </div>
+              <p class="text-muted" style="font-size: 12px;">Scan with Android camera or open the link below:</p>
+            </div>
+
+            <!-- Dynamic URL & Copy -->
+            <div style="display:flex; gap:8px; margin-bottom: 14px;">
+              <input id="mobileDirectUrlInput" class="form-input font-mono" style="font-size:12px; padding: 8px 12px;" readonly value="http://192.168.0.118:8080/">
+              <button id="btnCopyMobileUrl" type="button" class="btn btn-secondary btn-sm" style="white-space:nowrap;">📋 Copy Link</button>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+              <button id="btnTriggerPwaInstall" type="button" class="btn btn-primary btn-sm" style="padding: 10px; justify-content: center;">
+                📲 1-Tap PWA Install
+              </button>
+              <a id="btnOpenPhoneBrowser" href="http://192.168.0.118:8080/" target="_blank" class="btn btn-secondary btn-sm" style="padding: 10px; justify-content: center; text-decoration:none;">
+                🌐 Open in Browser
+              </a>
+            </div>
+
+            <!-- APK / Google Play TWA Info -->
+            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-sm); padding: 12px; font-size: 12px; line-height: 1.6;">
+              <strong style="color: var(--accent-emerald); display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                <span>📦</span> Standalone Android APK & Google Play (TWA):
+              </strong>
+              <p style="color: var(--text-muted); margin-bottom: 6px;">
+                NexDesk includes pre-configured Google Bubblewrap TWA manifest (<code class="font-mono">android/twa-manifest.json</code>) and digital asset links (<code class="font-mono">assetlinks.json</code>).
+              </p>
+              <div style="background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px; font-family: var(--font-mono); font-size: 11px; color: var(--accent-cyan); display: flex; justify-content: space-between; align-items: center;">
+                <span>.\build-android-apk.bat</span>
+                <span class="text-muted">Generates release APK</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 2: LAPTOP & DESKTOP APP -->
+          <div id="panelPublishLaptop" class="hidden">
+            <div style="margin-bottom: 16px;">
+              <h3 style="font-size: 14px; font-weight: 700; color: var(--accent-cyan); margin-bottom: 4px;">🖥️ Standalone Desktop Window Mode</h3>
+              <p class="text-muted" style="font-size: 12px; margin-bottom: 10px;">
+                Launch NexDesk in a dedicated, borderless desktop window (like Slack or VS Code) without browser URL bars or tabs.
+              </p>
+              <div style="background: rgba(0,0,0,0.3); padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-family: var(--font-mono); font-size: 12px; color: var(--accent-cyan); display: flex; justify-content: space-between; align-items: center;">
+                <span>.\launch-desktop-app.bat</span>
+                <span class="text-muted">Double-click to run</span>
+              </div>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+              <h3 style="font-size: 14px; font-weight: 700; color: var(--accent-purple); margin-bottom: 4px;">💻 Desktop PWA Installation</h3>
+              <p class="text-muted" style="font-size: 12px; margin-bottom: 10px;">
+                Install directly into Windows Start Menu, Taskbar, or macOS Applications folder:
+              </p>
+              <button id="btnInstallDesktopPwa" type="button" class="btn btn-primary btn-sm" style="width: 100%; justify-content: center; padding: 10px;">
+                📥 Install NexDesk as Desktop App
+              </button>
+            </div>
+
+            <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: var(--radius-sm); padding: 12px; font-size: 12px; line-height: 1.6;">
+              <strong style="color: var(--accent-cyan); display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                <span>🐳</span> Production Cloud & Docker Publishing:
+              </strong>
+              <div style="background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px; font-family: var(--font-mono); font-size: 11px; color: var(--accent-cyan); margin-top: 6px;">
+                docker compose up --build -d
+              </div>
+              <p class="text-muted" style="margin-top: 6px; font-size: 11px;">
+                Pre-packaged Spring Boot 3.3.2 JAR with Oracle Database connectivity ready for AWS, Azure, GCP, or Render.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- MODAL: INFRASTRUCTURE HEALTH STATUS -->
+    <!-- ============================================== -->
+    <div id="infraModal" class="modal-overlay">
+      <div class="modal-dialog" style="max-width: 600px;">
+        <div class="bottom-sheet-handle"></div>
+        <div class="modal-header">
+          <h2 style="font-size:17px; font-weight:700;">🌐 Corporate Infrastructure Health Radar</h2>
+          <button id="infraModalClose" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div id="infraServicesList" style="display:flex; flex-direction:column; gap:12px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Bottom Navigation (Android Native Material Style) -->
+    <nav id="mobileBottomNav" class="mobile-bottom-nav hidden"></nav>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container"></div>
+  </div>
+
+  <script src="/js/auth.js"></script>
+</body>
+</html>

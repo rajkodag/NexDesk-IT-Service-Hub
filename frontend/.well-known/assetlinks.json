@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.nexdesk.itservicehub",
+    "sha256_cert_fingerprints": [
+      "14:6D:E9:44:C5:9F:5C:7E:6D:22:98:B5:4D:22:84:87:6F:A0:67:8B:BC:FA:21:6E:9A:8A:2F:56:4C:E6:E0:9E"
+    ]
+  }
+}]

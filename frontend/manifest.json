@@ -1,0 +1,71 @@
+{
+  "id": "/index.html",
+  "name": "NexDesk 2.0 IT Service Hub",
+  "short_name": "NexDesk",
+  "description": "Enterprise IT Service Management & Autonomous AI Help Desk Platform",
+  "start_url": "/index.html",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "background_color": "#090d16",
+  "theme_color": "#090d16",
+  "orientation": "any",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["business", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Report IT Issue",
+      "short_name": "New Ticket",
+      "description": "Report a technical issue with AI self-healing triage",
+      "url": "/index.html?view=create",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "My Tickets Queue",
+      "short_name": "My Tickets",
+      "description": "Check status and activity on reported tickets",
+      "url": "/index.html?view=tickets",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "IT Ops Kanban",
+      "short_name": "Kanban",
+      "description": "Admin triage and ticket dispatch board",
+      "url": "/index.html?view=kanban",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

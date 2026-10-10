@@ -1,8 +1,36 @@
+# Compiled class files & build artifacts
 *.class
 out/
 target/
+backend/target/
+backend/out/
 bin/
+
+# Environment secrets and credentials (Never commit real passwords)
 .env
+*.pem
+*.key
+*.p12
+
+# Logs
 *.log
+logs/
+
+# IDE configurations
 .idea/
+*.iml
 .vscode/
+.settings/
+.project
+.classpath
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Maven wrapper and caches
+.m2/
+.mvn/timing.properties
+
+# Android build cache
+android-build/
